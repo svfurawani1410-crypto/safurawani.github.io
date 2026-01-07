@@ -1,0 +1,1549 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeneScope Expression Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700&display=swap');
+        
+        :root {
+            --background: #0d1117;
+            --surface: #161b22;
+            --text: #c9d1d9;
+            --primary: #58a6ff;
+            --secondary: #8b5cf6;
+            --accent: #00ff9d;
+            --glow: #58a6ff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0e14;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Genetics Background Animation */
+        .genetics-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(88, 166, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                linear-gradient(45deg, #0a0e14 0%, #0d1117 100%);
+        }
+        
+        .dna-strand {
+            position: absolute;
+            width: 100px;
+            height: 200px;
+            animation: floatDNA 20s linear infinite;
+        }
+        
+        .dna-strand::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .dna-strand::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: dnaSpin 2s linear infinite;
+            box-shadow: 0 0 10px var(--primary);
+        }
+        
+        .chromosome {
+            position: absolute;
+            width: 40px;
+            height: 80px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: 20px;
+            animation: chromosomeFloat 15s ease-in-out infinite;
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+        
+        .chromosome::before {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            left: 15px;
+            border-radius: 5px;
+        }
+        
+        .mitochondria {
+            position: absolute;
+            width: 60px;
+            height: 30px;
+            background: radial-gradient(ellipse at center, var(--accent), transparent 70%);
+            border-radius: 50%;
+            animation: pulseOrganelle 4s ease-in-out infinite;
+            filter: blur(2px);
+        }
+        
+        .cell-nucleus {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle at 30% 30%, var(--secondary), transparent 70%);
+            border-radius: 50%;
+            animation: nucleusPulse 8s ease-in-out infinite;
+            filter: blur(1px);
+        }
+        
+        @keyframes floatDNA {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes dnaSpin {
+            0% {
+                transform: rotate(0deg) translateX(20px);
+            }
+            100% {
+                transform: rotate(360deg) translateX(20px);
+            }
+        }
+        
+        @keyframes chromosomeFloat {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-50px) rotate(180deg);
+            }
+        }
+        
+        @keyframes pulseOrganelle {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.6;
+            }
+        }
+        
+        @keyframes nucleusPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 30px var(--secondary);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 0 50px var(--secondary);
+            }
+        }
+        
+        .glowing-border {
+            position: relative;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            box-shadow: 
+                0 0 20px rgba(88, 166, 255, 0.3),
+                inset 0 0 20px rgba(88, 166, 255, 0.1);
+        }
+        
+        .glowing-border::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--accent));
+            border-radius: inherit;
+            z-index: -1;
+            animation: borderGlow 3s linear infinite;
+            filter: blur(10px);
+        }
+        
+        @keyframes borderGlow {
+            0%, 100% {
+                opacity: 0.5;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+        
+        /* Particle Animation */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: particleFloat 8s infinite ease-in-out;
+            box-shadow: 0 0 10px currentColor;
+        }
+        
+        @keyframes particleFloat {
+            0%, 100% { 
+                transform: translateY(0) translateX(0); 
+                opacity: 0; 
+            }
+            25% { 
+                opacity: 1; 
+            }
+            50% { 
+                transform: translateY(-100px) translateX(50px); 
+            }
+            75% { 
+                opacity: 0.5; 
+            }
+        }
+        
+        .simulator-container {
+            position: relative;
+            z-index: 10;
+            max-width: 900px;
+            width: 100%;
+            background: rgba(22, 27, 34, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 3rem;
+            border: 2px solid rgba(88, 166, 255, 0.2);
+            box-shadow: 
+                0 0 50px rgba(88, 166, 255, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .app-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .app-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(88, 166, 255, 0.3);
+        }
+        
+        .app-subtitle {
+            font-size: 1.2rem;
+            color: rgba(201, 209, 217, 0.7);
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            background: rgba(88, 166, 255, 0.05);
+            padding: 0.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(88, 166, 255, 0.2);
+        }
+        
+        .nav-tab {
+            padding: 1rem 2rem;
+            background: transparent;
+            border: none;
+            color: rgba(201, 209, 217, 0.6);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+            flex: 1;
+        }
+        
+        .nav-tab:hover {
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--primary);
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 0 20px rgba(88, 166, 255, 0.4);
+        }
+        
+        /* Enhanced Input Sections */
+        .input-section {
+            margin-bottom: 2rem;
+            animation: slideIn 0.5s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .custom-select {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            background: rgba(88, 166, 255, 0.08);
+            border: 2px solid rgba(88, 166, 255, 0.4);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2358a6ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 20px;
+            padding-right: 3rem;
+        }
+        
+        .custom-select:hover {
+            border-color: var(--primary);
+            background: rgba(88, 166, 255, 0.15);
+            box-shadow: 0 0 15px rgba(88, 166, 255, 0.2);
+        }
+        
+        .simulate-btn {
+            width: 100%;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Orbitron', sans-serif;
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(88, 166, 255, 0.4);
+        }
+        
+        .simulate-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(88, 166, 255, 0.6);
+        }
+        
+        .simulate-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            animation: btnShine 3s infinite;
+        }
+        
+        @keyframes btnShine {
+            0% {
+                transform: rotate(45deg) translateX(-100%);
+            }
+            100% {
+                transform: rotate(45deg) translateX(100%);
+            }
+        }
+        
+        /* Enhanced Results Panel */
+        .result-panel {
+            margin-top: 2.5rem;
+            padding: 2.5rem;
+            background: linear-gradient(135deg, rgba(88, 166, 255, 0.1), rgba(139, 92, 246, 0.1));
+            border-radius: 20px;
+            border: 2px solid rgba(88, 166, 255, 0.3);
+            display: none;
+            animation: slideUp 0.5s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        .result-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .result-item {
+            background: rgba(22, 27, 34, 0.7);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--primary);
+            transition: transform 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        .result-item:hover {
+            transform: translateX(10px);
+            border-left-width: 6px;
+        }
+        
+        .result-label {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .result-value {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: rgba(201, 209, 217, 0.95);
+        }
+        
+        /* Enhanced Allele Visualization */
+        .allele-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            margin: 2.5rem 0;
+        }
+        
+        .allele-box {
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            animation: pulse 2s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .allele-box::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%);
+            animation: alleleShine 2s infinite;
+        }
+        
+        @keyframes alleleShine {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        
+        .allele-a {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.5);
+        }
+        
+        .allele-b {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.5);
+        }
+        
+        .plus-sign {
+            font-size: 2.5rem;
+            color: var(--accent);
+            font-weight: 900;
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Examples Grid */
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .example-card {
+            background: rgba(88, 166, 255, 0.08);
+            border: 2px solid rgba(88, 166, 255, 0.2);
+            border-radius: 15px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .example-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(88, 166, 255, 0.3);
+            background: rgba(88, 166, 255, 0.15);
+        }
+        
+        .example-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        
+        /* Quiz Styling */
+        .quiz-container {
+            background: rgba(88, 166, 255, 0.08);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-top: 2rem;
+            border: 2px solid rgba(88, 166, 255, 0.2);
+        }
+        
+        .question-card-quiz {
+            background: rgba(22, 27, 34, 0.8);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+        
+        .question-card-quiz:hover {
+            border-left-width: 6px;
+            transform: translateX(5px);
+        }
+        
+        .quiz-option {
+            padding: 1.25rem;
+            background: rgba(88, 166, 255, 0.1);
+            border: 2px solid rgba(88, 166, 255, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        
+        .quiz-option:hover {
+            background: rgba(88, 166, 255, 0.2);
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+        
+        .quiz-option.selected {
+            background: rgba(88, 166, 255, 0.25);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(88, 166, 255, 0.3);
+        }
+        
+        .quiz-option.correct {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+        }
+        
+        .quiz-option.incorrect {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+        }
+        
+        .quiz-score {
+            text-align: center;
+            padding: 3rem;
+            background: linear-gradient(135deg, rgba(88, 166, 255, 0.2), rgba(139, 92, 246, 0.2));
+            border-radius: 20px;
+            margin-top: 2rem;
+            border: 2px solid var(--primary);
+        }
+        
+        .score-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 1rem 0;
+        }
+        
+        /* Modal Styling */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: rgba(22, 27, 34, 0.95);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 700px;
+            width: 100%;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 50px rgba(88, 166, 255, 0.5);
+            animation: modalSlide 0.4s ease;
+        }
+        
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Section Titles */
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 2rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+        
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(88, 166, 255, 0.2);
+            border-radius: 3px;
+            margin: 2rem 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        /* Example Categories */
+        .category-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin: 2.5rem 0 1.5rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(88, 166, 255, 0.3);
+        }
+        
+        .category-header.incomplete {
+            color: var(--secondary);
+            border-bottom-color: rgba(139, 92, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="h-full">
+    <!-- Genetics Background Animation -->
+    <div class="genetics-bg" id="genetics-bg"></div>
+    
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <main class="simulator-container glowing-border">
+            <header class="app-header">
+                <h1 class="app-title" id="app-title">GeneScope</h1>
+                <p class="app-subtitle" id="app-subtitle">Genetic Expression Simulator</p>
+            </header>
+            
+            <nav class="nav-tabs">
+                <button class="nav-tab active" onclick="switchTab('simulator')">🧬 Simulator</button>
+                <button class="nav-tab" onclick="switchTab('examples')">📚 Examples (10 Total)</button>
+                <button class="nav-tab" onclick="switchTab('quiz')">🎯 Quiz (10 Qs)</button>
+            </nav>
+            
+            <!-- Simulator Tab -->
+            <div id="simulator-tab" class="tab-content active">
+                <div class="input-section">
+                    <label for="inheritance-select" class="input-label">Select Inheritance Type:</label>
+                    <select id="inheritance-select" class="custom-select">
+                        <option value="">-- Choose Inheritance Type --</option>
+                        <option value="codominance">Codominance</option>
+                        <option value="incomplete">Incomplete Dominance</option>
+                    </select>
+                </div>
+                
+                <div class="input-section">
+                    <label for="allele-select" class="input-label">Select Allele Combination:</label>
+                    <select id="allele-select" class="custom-select">
+                        <option value="">-- Choose Allele Combination --</option>
+                        <option value="AB">Allele A + Allele B</option>
+                        <option value="RW">Allele R (Red) + Allele W (White)</option>
+                        <option value="TT">Allele T₁ + Allele T₂</option>
+                    </select>
+                </div>
+                
+                <button class="simulate-btn" onclick="runSimulation()">
+                    <span>Run Genetic Simulation</span>
+                </button>
+                
+                <div class="result-panel" id="result-panel">
+                    <div id="result-content"></div>
+                </div>
+            </div>
+            
+            <!-- Examples Tab -->
+            <div id="examples-tab" class="tab-content">
+                <h2 class="section-title">Genetic Examples Gallery</h2>
+                <p style="text-align: center; margin-bottom: 1.5rem; color: rgba(201, 209, 217, 0.8);">
+                    10 real-world examples of codominance and incomplete dominance
+                </p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="examples-progress"></div>
+                </div>
+                
+                <h3 class="category-header">Codominance Examples</h3>
+                <div class="examples-grid" id="codominance-examples"></div>
+                
+                <h3 class="category-header incomplete">Incomplete Dominance Examples</h3>
+                <div class="examples-grid" id="incomplete-examples"></div>
+            </div>
+            
+            <!-- Quiz Tab -->
+            <div id="quiz-tab" class="tab-content">
+                <h2 class="section-title">Genetics Quiz - Test Your Knowledge</h2>
+                <p style="text-align: center; margin-bottom: 2rem; color: rgba(201, 209, 217, 0.8);">
+                    Answer all 10 questions about codominance and incomplete dominance
+                </p>
+                <div class="quiz-container" id="quiz-container"></div>
+                <div id="quiz-score-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="example-modal">
+        <div class="modal-content">
+            <h2 class="modal-header" id="modal-title"></h2>
+            <div id="modal-body"></div>
+            <button class="simulate-btn" onclick="closeModal()" style="margin-top: 2rem;">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Genetic Data - Now with 10 total examples (5 additional)
+        const geneticExamples = {
+            codominance: [
+                {
+                    title: 'ABO Blood Type System',
+                    genotype: 'I<sup>A</sup>I<sup>B</sup>',
+                    description: 'Both A and B antigens expressed equally on red blood cells',
+                    icon: '🩸',
+                    details: {
+                        mechanism: 'Both alleles produce their respective antigens simultaneously without blending',
+                        phenotype: 'Type AB blood with both A and B antigens present',
+                        clinical: 'Universal recipients for blood transfusions',
+                        fact: 'AB blood type occurs in only about 4% of the human population worldwide',
+                        example: 'Human ABO blood group system discovered by Karl Landsteiner'
+                    }
+                },
+                {
+                    title: 'Roan Cattle',
+                    genotype: 'C<sup>R</sup>C<sup>W</sup>',
+                    description: 'Red and white hairs intermingled in coat',
+                    icon: '🐄',
+                    details: {
+                        mechanism: 'Red and white hair follicles develop independently in a mosaic pattern',
+                        phenotype: 'Mixture of red and white hairs (roan pattern)',
+                        clinical: 'Classic example in animal genetics and breeding',
+                        fact: 'Roan is a highly valued trait in Shorthorn cattle breeding',
+                        example: 'Shorthorn cattle coat color inheritance'
+                    }
+                },
+                {
+                    title: 'MN Blood Group System',
+                    genotype: 'L<sup>M</sup>L<sup>N</sup>',
+                    description: 'Both M and N antigens present on red blood cells',
+                    icon: '🩺',
+                    details: {
+                        mechanism: 'Co-expression of M and N glycophorin proteins',
+                        phenotype: 'MN blood type with both antigens',
+                        clinical: 'Used in paternity testing and population genetics',
+                        fact: 'Discovered in 1927, this system has no natural antibodies',
+                        example: 'Human MN blood group antigens'
+                    }
+                },
+                {
+                    title: 'Spotted Flowers',
+                    genotype: 'P<sup>R</sup>P<sup>W</sup>',
+                    description: 'Flowers with distinct red and white patches',
+                    icon: '🌺',
+                    details: {
+                        mechanism: 'Different cells express different alleles creating a mosaic',
+                        phenotype: 'Variegated flowers with separate colored areas',
+                        clinical: 'Demonstrates cellular-level gene expression patterns',
+                        fact: 'Each petal cell follows the "one cell, one allele" rule',
+                        example: 'Certain varieties of camellias and carnations'
+                    }
+                },
+                {
+                    title: 'Sickle Cell Trait',
+                    genotype: 'Hb<sup>A</sup>Hb<sup>S</sup>',
+                    description: 'Both normal and sickle hemoglobin produced',
+                    icon: '🔬',
+                    details: {
+                        mechanism: 'Co-dominant expression at molecular level',
+                        phenotype: 'Both hemoglobin types present in red blood cells',
+                        clinical: 'Provides malaria resistance while reducing sickle cell severity',
+                        fact: 'Heterozygous individuals have 40% sickle hemoglobin and 60% normal',
+                        example: 'Balanced polymorphism in malaria-endemic regions'
+                    }
+                },
+                {
+                    title: 'Erminette Chickens',
+                    genotype: 'F<sup>B</sup>F<sup>W</sup>',
+                    description: 'Black and white feathers in speckled pattern',
+                    icon: '🐓',
+                    details: {
+                        mechanism: 'Independent expression in different feather follicles',
+                        phenotype: 'Speckled black and white plumage',
+                        clinical: 'Popular breed for demonstrating codominance',
+                        fact: 'The pattern varies between individuals due to random distribution',
+                        example: 'Classic genetics classroom example'
+                    }
+                }
+            ],
+            incomplete: [
+                {
+                    title: 'Snapdragon Flowers',
+                    genotype: 'R<sup>R</sup>r<sup>r</sup>',
+                    description: 'Red and white alleles blend to produce pink',
+                    icon: '🌸',
+                    details: {
+                        mechanism: 'Partial expression of both pigment-producing alleles',
+                        phenotype: 'Pink flowers (intermediate between red and white)',
+                        clinical: 'First discovered exception to Mendel\'s dominance rules',
+                        fact: 'Discovered by Carl Correns in 1905',
+                        example: 'Antirrhinum majus flower color inheritance'
+                    }
+                },
+                {
+                    title: 'Andalusian Chickens',
+                    genotype: 'B<sup>B</sup>W<sup>W</sup>',
+                    description: 'Black and white feathers create blue appearance',
+                    icon: '🐔',
+                    details: {
+                        mechanism: 'Incomplete melanin distribution in feathers',
+                        phenotype: 'Blue-gray plumage from blended pigments',
+                        clinical: 'Important in poultry genetics and breeding',
+                        fact: 'The "blue" Andalusian is actually heterozygous',
+                        example: 'Andalusian fowl plumage color genetics'
+                    }
+                },
+                {
+                    title: 'Four O\'Clock Plants',
+                    genotype: 'R<sup>1</sup>R<sup>2</sup>',
+                    description: 'Day and night flower color variations',
+                    icon: '🌿',
+                    details: {
+                        mechanism: 'Temperature and light-sensitive pigment expression',
+                        phenotype: 'Flowers change color based on environmental conditions',
+                        clinical: 'Shows interaction between genetics and environment',
+                        fact: 'Flowers typically open in late afternoon (hence the name)',
+                        example: 'Mirabilis jalapa flower color inheritance'
+                    }
+                },
+                {
+                    title: 'Wavy Hair in Humans',
+                    genotype: 'C<sup>S</sup>C<sup>C</sup>',
+                    description: 'Straight and curly alleles produce wavy hair',
+                    icon: '👨‍🦱',
+                    details: {
+                        mechanism: 'Intermediate keratin protein structure formation',
+                        phenotype: 'Wavy hair texture between straight and curly',
+                        clinical: 'Demonstrates polygenic inheritance in humans',
+                        fact: 'Hair texture involves multiple genes, not just one',
+                        example: 'Human hair texture inheritance patterns'
+                    }
+                },
+                {
+                    title: 'Fruit Size in Plants',
+                    genotype: 'S<sup>L</sup>S<sup>S</sup>',
+                    description: 'Large and small fruit alleles produce medium fruits',
+                    icon: '🍅',
+                    details: {
+                        mechanism: 'Partial expression of growth regulator genes',
+                        phenotype: 'Intermediate-sized fruits',
+                        clinical: 'Important in agricultural plant breeding',
+                        fact: 'This allows breeders to create optimal fruit sizes',
+                        example: 'Tomato and pepper fruit size inheritance'
+                    }
+                }
+            ]
+        };
+
+        // 10 Comprehensive Quiz Questions
+        const quizQuestions = [
+            {
+                question: 'A person with genotype I<sup>A</sup>I<sup>B</sup> has blood type AB, where both A and B antigens are present on red blood cells. What type of inheritance pattern is this?',
+                options: [
+                    'Complete Dominance',
+                    'Codominance',
+                    'Incomplete Dominance',
+                    'Sex-linked Inheritance'
+                ],
+                correct: 1,
+                explanation: 'This is a classic example of codominance. Both alleles (I<sup>A</sup> and I<sup>B</sup>) are fully expressed simultaneously, resulting in both A and B antigens being present on the red blood cells without any blending.'
+            },
+            {
+                question: 'In snapdragons, crossing a red-flowered plant (RR) with a white-flowered plant (rr) produces all pink-flowered offspring (Rr). What type of inheritance does this demonstrate?',
+                options: [
+                    'Codominance',
+                    'Complete Dominance',
+                    'Incomplete Dominance',
+                    'Multiple Alleles'
+                ],
+                correct: 2,
+                explanation: 'This is incomplete dominance. The heterozygous condition (Rr) produces an intermediate phenotype (pink) that is a blend of the two parental traits (red and white), rather than one dominating over the other.'
+            },
+            {
+                question: 'What is the key difference between codominance and incomplete dominance?',
+                options: [
+                    'In codominance, traits blend; in incomplete dominance, they remain separate',
+                    'In codominance, both traits are visible separately; in incomplete dominance, they blend',
+                    'Codominance occurs only in animals, incomplete dominance only in plants',
+                    'There is no significant difference between them'
+                ],
+                correct: 1,
+                explanation: 'The key difference is that in codominance, both parental traits are fully and distinctly expressed (like AB blood type), while in incomplete dominance, the traits blend to create an intermediate phenotype (like pink snapdragons).'
+            },
+            {
+                question: 'Roan cattle have both red and white hairs intermingled. If you cross two roan cattle (Rr × Rr), what phenotypic ratio would you expect in their offspring?',
+                options: [
+                    'All roan',
+                    '1 red : 2 roan : 1 white',
+                    '3 red : 1 white',
+                    '1 red : 1 roan : 1 white'
+                ],
+                correct: 1,
+                explanation: 'In codominance, crossing two heterozygotes (Rr × Rr) produces a 1:2:1 ratio: 25% red (RR), 50% roan (Rr), and 25% white (rr). This follows typical Mendelian inheritance patterns but with codominant expression.'
+            },
+            {
+                question: 'Which of the following statements about incomplete dominance is TRUE?',
+                options: [
+                    'It produces a phenotype identical to one parent',
+                    'It creates a new intermediate phenotype not seen in either parent',
+                    'Both alleles are fully expressed at the same time',
+                    'It only occurs in flower color genetics'
+                ],
+                correct: 1,
+                explanation: 'In incomplete dominance, neither allele is completely dominant, resulting in a heterozygous phenotype that is intermediate between the two homozygous phenotypes. This creates a new phenotype not present in either parent.'
+            },
+            {
+                question: 'In human genetics, the MN blood group system demonstrates codominance. Individuals with genotype L<sup>M</sup>L<sup>N</sup> have both M and N antigens. What would be the phenotype of someone with genotype L<sup>M</sup>L<sup>M</sup>?',
+                options: [
+                    'Type M only',
+                    'Type N only',
+                    'Both M and N antigens',
+                    'No antigens present'
+                ],
+                correct: 0,
+                explanation: 'In the MN blood group system, individuals with genotype L<sup>M</sup>L<sup>M</sup> express only the M antigen, those with L<sup>N</sup>L<sup>N</sup> express only the N antigen, and heterozygotes L<sup>M</sup>L<sup>N</sup> express both antigens equally.'
+            },
+            {
+                question: 'Four o\'clock flowers show incomplete dominance for flower color. If you cross a pink flower (Rr) with a white flower (rr), what percentage of offspring would be pink?',
+                options: [
+                    '0%',
+                    '25%',
+                    '50%',
+                    '100%'
+                ],
+                correct: 2,
+                explanation: 'The cross Rr (pink) × rr (white) produces 50% Rr (pink) and 50% rr (white) offspring. This demonstrates that incomplete dominance follows standard Mendelian segregation patterns.'
+            },
+            {
+                question: 'Which of the following is an example of codominance at the molecular level?',
+                options: [
+                    'Production of pink flowers from red and white parents',
+                    'Sickle cell trait where both normal and sickle hemoglobin are present',
+                    'Blue Andalusian chickens from black and white parents',
+                    'All of the above'
+                ],
+                correct: 1,
+                explanation: 'Sickle cell trait is a molecular example of codominance. Heterozygous individuals produce both normal hemoglobin (HbA) and sickle hemoglobin (HbS) simultaneously, with both forms present in their red blood cells.'
+            },
+            {
+                question: 'What is the expected phenotypic ratio when crossing two pink snapdragons (incomplete dominance)?',
+                options: [
+                    '3 red : 1 white',
+                    '1 red : 2 pink : 1 white',
+                    'All pink',
+                    '1 red : 1 pink : 1 white'
+                ],
+                correct: 1,
+                explanation: 'In incomplete dominance, crossing two heterozygotes (Rr × Rr) produces a 1:2:1 phenotypic ratio: 25% red (RR), 50% pink (Rr), and 25% white (rr). This is identical to the genotypic ratio.'
+            },
+            {
+                question: 'In chickens, the allele for black feathers (B) and the allele for white feathers (W) show codominance. What would be the phenotype of a chicken with genotype BW?',
+                options: [
+                    'Black feathers',
+                    'White feathers',
+                    'Gray feathers',
+                    'Both black and white feathers (checkered)'
+                ],
+                correct: 3,
+                explanation: 'In codominance, both alleles are fully expressed. A chicken with genotype BW would show both black and white feathers in a checkered or speckled pattern, not blended gray feathers.'
+            }
+        ];
+
+        // Initialize Genetics Background
+        function initGeneticsBackground() {
+            const bg = document.getElementById('genetics-bg');
+            
+            // Create DNA strands
+            for (let i = 0; i < 8; i++) {
+                const dna = document.createElement('div');
+                dna.className = 'dna-strand';
+                dna.style.left = `${Math.random() * 100}%`;
+                dna.style.animationDelay = `${Math.random() * 5}s`;
+                dna.style.animationDuration = `${15 + Math.random() * 10}s`;
+                bg.appendChild(dna);
+            }
+            
+            // Create chromosomes
+            for (let i = 0; i < 6; i++) {
+                const chromosome = document.createElement('div');
+                chromosome.className = 'chromosome';
+                chromosome.style.left = `${Math.random() * 100}%`;
+                chromosome.style.top = `${Math.random() * 100}%`;
+                chromosome.style.animationDelay = `${Math.random() * 3}s`;
+                chromosome.style.animationDuration = `${10 + Math.random() * 10}s`;
+                chromosome.style.setProperty('--primary', getRandomColor());
+                bg.appendChild(chromosome);
+            }
+            
+            // Create organelles
+            for (let i = 0; i < 4; i++) {
+                const mito = document.createElement('div');
+                mito.className = 'mitochondria';
+                mito.style.left = `${Math.random() * 100}%`;
+                mito.style.top = `${Math.random() * 100}%`;
+                mito.style.animationDelay = `${Math.random() * 2}s`;
+                bg.appendChild(mito);
+                
+                const nucleus = document.createElement('div');
+                nucleus.className = 'cell-nucleus';
+                nucleus.style.left = `${Math.random() * 100}%`;
+                nucleus.style.top = `${Math.random() * 100}%`;
+                bg.appendChild(nucleus);
+            }
+            
+            // Create floating particles
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                particle.style.animationDelay = `${Math.random() * 8}s`;
+                particle.style.backgroundColor = getRandomColor();
+                bg.appendChild(particle);
+            }
+        }
+
+        function getRandomColor() {
+            const colors = ['#58a6ff', '#8b5cf6', '#00ff9d', '#ff6b6b', '#ffd93d'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Run Genetic Simulation
+        function runSimulation() {
+            const inheritance = document.getElementById('inheritance-select').value;
+            const allele = document.getElementById('allele-select').value;
+            const resultPanel = document.getElementById('result-panel');
+            const content = document.getElementById('result-content');
+
+            if (!inheritance || !allele) {
+                content.innerHTML = `
+                    <div class="result-header">⚠️ Missing Input</div>
+                    <div class="result-item">
+                        <div class="result-label">⚠️</div>
+                        <div class="result-value">Please select both inheritance type and allele combination</div>
+                    </div>
+                `;
+                resultPanel.style.display = 'block';
+                return;
+            }
+
+            let simulationHTML = '';
+            let alleleVisual = '';
+
+            // Create allele visualization
+            if (allele === 'AB') {
+                alleleVisual = `
+                    <div class="allele-visual">
+                        <div class="allele-box allele-a">A</div>
+                        <div class="plus-sign">+</div>
+                        <div class="allele-box allele-b">B</div>
+                    </div>
+                `;
+            } else if (allele === 'RW') {
+                alleleVisual = `
+                    <div class="allele-visual">
+                        <div class="allele-box allele-a">R</div>
+                        <div class="plus-sign">+</div>
+                        <div class="allele-box allele-b">W</div>
+                    </div>
+                `;
+            } else {
+                alleleVisual = `
+                    <div class="allele-visual">
+                        <div class="allele-box allele-a">T₁</div>
+                        <div class="plus-sign">+</div>
+                        <div class="allele-box allele-b">T₂</div>
+                    </div>
+                `;
+            }
+
+            if (inheritance === 'codominance') {
+                simulationHTML = `
+                    <div class="result-header">🧬 Codominance Simulation</div>
+                    ${alleleVisual}
+                    <div class="result-item">
+                        <div class="result-label">📊 Expression Pattern</div>
+                        <div class="result-value">Both alleles are fully and equally expressed without any blending.</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">🧪 Protein Production</div>
+                        <div class="result-value">Both proteins are synthesized at full capacity, maintaining their distinct properties.</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">🎯 Phenotype Result</div>
+                        <div class="result-value">The organism displays both traits simultaneously and distinctly (e.g., AB blood type, roan cattle).</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">💡 Key Insight</div>
+                        <div class="result-value">Neither allele is dominant; both contribute equally to the phenotype. This is common in blood group systems and coat colors.</div>
+                    </div>
+                `;
+            } else {
+                simulationHTML = `
+                    <div class="result-header">🧬 Incomplete Dominance Simulation</div>
+                    ${alleleVisual}
+                    <div class="result-item">
+                        <div class="result-label">📊 Expression Pattern</div>
+                        <div class="result-value">Both alleles are partially expressed, creating a blended intermediate phenotype.</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">🧪 Protein Production</div>
+                        <div class="result-value">Reduced levels of functional proteins lead to intermediate characteristics.</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">🎯 Phenotype Result</div>
+                        <div class="result-value">A new phenotype appears that is intermediate between the two parents (e.g., pink flowers from red and white parents).</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">💡 Key Insight</div>
+                        <div class="result-value">This demonstrates that dominance relationships can vary, and heterozygous individuals can show intermediate traits.</div>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = simulationHTML;
+            resultPanel.style.display = 'block';
+        }
+
+        // Tab Switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(`${tabName}-tab`).style.display = 'block';
+            event.target.classList.add('active');
+            
+            // Load content if needed
+            if (tabName === 'examples') {
+                loadExamples();
+            } else if (tabName === 'quiz') {
+                loadQuiz();
+            }
+        }
+
+        // Load Examples
+        function loadExamples() {
+            const codominanceContainer = document.getElementById('codominance-examples');
+            const incompleteContainer = document.getElementById('incomplete-examples');
+            
+            // Clear containers
+            codominanceContainer.innerHTML = '';
+            incompleteContainer.innerHTML = '';
+            
+            // Load 6 codominance examples
+            geneticExamples.codominance.forEach((example, index) => {
+                const card = document.createElement('div');
+                card.className = 'example-card';
+                card.onclick = () => showExampleDetails(example, 'Codominance', index);
+                card.innerHTML = `
+                    <div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">${example.icon}</div>
+                    <h3 style="color: var(--primary); font-weight: 700; text-align: center; margin-bottom: 0.5rem;">
+                        ${example.title}
+                    </h3>
+                    <div style="font-family: 'Orbitron', sans-serif; color: var(--accent); text-align: center; margin-bottom: 1rem; font-size: 1.2rem;">
+                        ${example.genotype}
+                    </div>
+                    <p style="text-align: center; color: rgba(201, 209, 217, 0.8); line-height: 1.5;">
+                        ${example.description}
+                    </p>
+                    <div style="text-align: center; margin-top: 1rem; font-size: 0.9rem; color: rgba(88, 166, 255, 0.7);">
+                        Click to learn more
+                    </div>
+                `;
+                codominanceContainer.appendChild(card);
+            });
+            
+            // Load 5 incomplete dominance examples
+            geneticExamples.incomplete.forEach((example, index) => {
+                const card = document.createElement('div');
+                card.className = 'example-card';
+                card.onclick = () => showExampleDetails(example, 'Incomplete Dominance', index + geneticExamples.codominance.length);
+                card.innerHTML = `
+                    <div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">${example.icon}</div>
+                    <h3 style="color: var(--secondary); font-weight: 700; text-align: center; margin-bottom: 0.5rem;">
+                        ${example.title}
+                    </h3>
+                    <div style="font-family: 'Orbitron', sans-serif; color: var(--accent); text-align: center; margin-bottom: 1rem; font-size: 1.2rem;">
+                        ${example.genotype}
+                    </div>
+                    <p style="text-align: center; color: rgba(201, 209, 217, 0.8); line-height: 1.5;">
+                        ${example.description}
+                    </p>
+                    <div style="text-align: center; margin-top: 1rem; font-size: 0.9rem; color: rgba(139, 92, 246, 0.7);">
+                        Click to learn more
+                    </div>
+                `;
+                incompleteContainer.appendChild(card);
+            });
+            
+            // Update progress bar
+            setTimeout(() => {
+                document.getElementById('examples-progress').style.width = '100%';
+            }, 100);
+        }
+
+        // Load Quiz
+        function loadQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+            
+            quizQuestions.forEach((question, qIndex) => {
+                const questionHTML = `
+                    <div class="question-card-quiz">
+                        <div style="color: var(--primary); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">
+                            Question ${qIndex + 1} of ${quizQuestions.length}
+                        </div>
+                        <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem; line-height: 1.6;">
+                            ${question.question}
+                        </div>
+                        <div class="quiz-options" id="options-${qIndex}">
+                            ${question.options.map((option, oIndex) => `
+                                <div class="quiz-option" onclick="selectAnswer(${qIndex}, ${oIndex})">
+                                    ${option}
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="quiz-feedback" id="feedback-${qIndex}" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(88, 166, 255, 0.1); border-radius: 8px;"></div>
+                    </div>
+                `;
+                container.innerHTML += questionHTML;
+            });
+            
+            container.innerHTML += `
+                <button class="simulate-btn" onclick="submitQuiz()" style="margin-top: 2rem;">
+                    Submit All Answers
+                </button>
+            `;
+        }
+
+        let quizAnswers = new Array(quizQuestions.length).fill(null);
+        let score = 0;
+
+        function selectAnswer(qIndex, oIndex) {
+            if (quizAnswers[qIndex] !== null) return;
+            
+            quizAnswers[qIndex] = oIndex;
+            const options = document.querySelectorAll(`#options-${qIndex} .quiz-option`);
+            const feedback = document.getElementById(`feedback-${qIndex}`);
+            const question = quizQuestions[qIndex];
+            const isCorrect = oIndex === question.correct;
+            
+            // Update UI
+            options.forEach((opt, idx) => {
+                opt.classList.remove('selected', 'correct', 'incorrect');
+                opt.style.pointerEvents = 'none';
+                
+                if (idx === oIndex) {
+                    opt.classList.add('selected');
+                    opt.classList.add(isCorrect ? 'correct' : 'incorrect');
+                }
+                
+                if (idx === question.correct && idx !== oIndex) {
+                    opt.classList.add('correct');
+                }
+            });
+            
+            // Show feedback
+            feedback.innerHTML = `
+                <div style="font-weight: 700; color: ${isCorrect ? '#22c55e' : '#ef4444'}; margin-bottom: 0.5rem;">
+                    ${isCorrect ? '✅ Correct!' : '❌ Incorrect'}
+                </div>
+                <div style="font-size: 0.95rem; line-height: 1.5;">
+                    <strong>Explanation:</strong> ${question.explanation}
+                </div>
+            `;
+            feedback.style.display = 'block';
+            
+            // Auto-scroll to next question if available
+            setTimeout(() => {
+                const nextQuestion = document.getElementById(`question-${qIndex + 1}`);
+                if (nextQuestion) {
+                    nextQuestion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 500);
+        }
+
+        function submitQuiz() {
+            score = 0;
+            let answeredAll = true;
+            
+            // Check if all questions are answered
+            quizQuestions.forEach((q, index) => {
+                if (quizAnswers[index] === null) {
+                    answeredAll = false;
+                    // Highlight unanswered questions
+                    const questionCard = document.querySelector(`#question-${index}`);
+                    questionCard.style.borderLeftColor = '#ef4444';
+                    questionCard.style.animation = 'pulse 1s infinite';
+                }
+            });
+            
+            if (!answeredAll) {
+                alert('Please answer all 10 questions before submitting!');
+                // Scroll to first unanswered question
+                const firstUnanswered = quizAnswers.indexOf(null);
+                if (firstUnanswered !== -1) {
+                    document.getElementById(`question-${firstUnanswered}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
+            
+            // Calculate score
+            quizQuestions.forEach((q, index) => {
+                if (quizAnswers[index] === q.correct) {
+                    score++;
+                }
+            });
+            
+            const percentage = Math.round((score / quizQuestions.length) * 100);
+            let message = '';
+            let emoji = '';
+            
+            if (percentage === 100) {
+                message = 'Perfect Score! You\'re a genetics expert!';
+                emoji = '🧬🏆';
+            } else if (percentage >= 80) {
+                message = 'Excellent! Strong understanding of genetic concepts!';
+                emoji = '🌟👍';
+            } else if (percentage >= 60) {
+                message = 'Good effort! Review the examples for better understanding.';
+                emoji = '📚✨';
+            } else {
+                message = 'Keep studying! Genetics takes practice.';
+                emoji = '💪🎯';
+            }
+            
+            const scoreContainer = document.getElementById('quiz-score-container');
+            scoreContainer.innerHTML = `
+                <div class="quiz-score">
+                    <h3 style="color: var(--primary); margin-bottom: 1.5rem; font-size: 1.8rem;">Quiz Results ${emoji}</h3>
+                    <div style="font-size: 1.2rem; margin-bottom: 1rem; color: rgba(201, 209, 217, 0.8);">
+                        You answered ${score} out of ${quizQuestions.length} questions correctly
+                    </div>
+                    <div class="score-number">${score}/${quizQuestions.length}</div>
+                    <div style="font-size: 1.5rem; margin: 1rem 0; color: var(--accent);">${percentage}%</div>
+                    <p style="font-size: 1.2rem; margin-bottom: 2rem; line-height: 1.5;">${message}</p>
+                    
+                    <div style="margin: 2rem 0;">
+                        <button class="simulate-btn" onclick="resetQuiz()" style="margin-bottom: 1rem;">
+                            Retake Quiz
+                        </button>
+                        <button class="simulate-btn" onclick="switchTab('examples')" style="background: linear-gradient(135deg, var(--secondary), var(--accent));">
+                            Review Examples
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Scroll to results
+            setTimeout(() => {
+                scoreContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+        }
+
+        function resetQuiz() {
+            quizAnswers = new Array(quizQuestions.length).fill(null);
+            score = 0;
+            document.getElementById('quiz-score-container').innerHTML = '';
+            loadQuiz();
+            
+            // Reset all question cards
+            document.querySelectorAll('.question-card-quiz').forEach(card => {
+                card.style.borderLeftColor = '';
+                card.style.animation = '';
+            });
+        }
+
+        function showExampleDetails(example, type, index) {
+            document.getElementById('modal-title').innerHTML = `
+                ${example.icon} ${example.title}
+            `;
+            
+            document.getElementById('modal-body').innerHTML = `
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <div style="font-family: 'Orbitron', sans-serif; font-size: 2rem; color: var(--accent); margin-bottom: 1rem;">
+                        ${example.genotype}
+                    </div>
+                    <div style="color: ${type === 'Codominance' ? 'var(--primary)' : 'var(--secondary)'}; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                        ${type}
+                    </div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">🔬 Genetic Mechanism</div>
+                    <div class="result-value">${example.details.mechanism}</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">🎯 Resulting Phenotype</div>
+                    <div class="result-value">${example.details.phenotype}</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">💊 Biological Significance</div>
+                    <div class="result-value">${example.details.clinical}</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">💡 Interesting Fact</div>
+                    <div class="result-value">${example.details.fact}</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">🌍 Real-world Example</div>
+                    <div class="result-value">${example.details.example}</div>
+                </div>
+                
+                <div style="margin-top: 2rem; padding: 1rem; background: rgba(88, 166, 255, 0.05); border-radius: 10px; text-align: center; color: rgba(201, 209, 217, 0.7);">
+                    <strong>Example ${index + 1} of ${geneticExamples.codominance.length + geneticExamples.incomplete.length}</strong>
+                </div>
+            `;
+            
+            document.getElementById('example-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('example-modal').style.display = 'none';
+        }
+
+        // Initialize everything
+        window.onload = function() {
+            initGeneticsBackground();
+            // Set initial tab states
+            document.getElementById('simulator-tab').style.display = 'block';
+        };
+    </script>
+</body>
+</html>
